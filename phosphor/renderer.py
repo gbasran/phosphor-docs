@@ -116,18 +116,18 @@ def render_page(template, config, page_content, nav_html, page_filename):
         logo_text = _escape(site.get("logo_text", "PD"))
 
         favicon_svg = (
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-            '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
-            f'<stop offset="0%" stop-color="{accent}"/>'
-            f'<stop offset="100%" stop-color="{accent_dim}"/>'
-            '</linearGradient></defs>'
-            f'<rect width="32" height="32" rx="6" fill="url(#g)"/>'
-            f'<text x="16" y="22" text-anchor="middle" '
-            f'font-family="system-ui,sans-serif" font-weight="700" '
-            f'font-size="14" fill="{bg_deep}">{logo_text}</text>'
-            '</svg>'
+            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
+            "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
+            f"<stop offset='0%25' stop-color='{accent}'/>"
+            f"<stop offset='100%25' stop-color='{accent_dim}'/>"
+            "</linearGradient></defs>"
+            f"<rect width='32' height='32' rx='6' fill='url(%23g)'/>"
+            f"<text x='16' y='22' text-anchor='middle' "
+            f"font-family='system-ui,sans-serif' font-weight='700' "
+            f"font-size='14' fill='{bg_deep}'>{logo_text}</text>"
+            "</svg>"
         )
-        favicon = "data:image/svg+xml," + urllib.parse.quote(favicon_svg, safe="<>/:='\"#! ")
+        favicon = "data:image/svg+xml," + favicon_svg
 
     # GitHub link
     github_url = site.get("github", "")
