@@ -452,16 +452,18 @@ theme:
 The `theme:` config is per-project — each site can have its own color scheme without modifying the Phosphor installation. The base Terminal Noir theme is used for any variable you don't override.
 :::
 
-### Custom Favicon
+### Favicon
 
-You can use a custom favicon by setting the `favicon` field in `docs.yaml`:
+The default favicon is **automatically themed** — it uses your `accent` and `accent_dim` colors for the gradient background, `bg_deep` for the text color, and `logo_text` for the letters. No configuration needed; just set your theme colors and the favicon matches.
+
+To use a completely custom favicon instead, set the `favicon` field in `docs.yaml`:
 
 ```
 site:
   favicon: "my-favicon.svg"
 ```
 
-Place the favicon file in your project directory (next to `docs.yaml`). SVG format is recommended. If no custom favicon is specified, Phosphor uses its default gradient favicon.
+Place the favicon file in your project directory (next to `docs.yaml`). SVG format is recommended. Custom favicons are copied as-is and not themed.
 
 ### Layout Breakpoints
 

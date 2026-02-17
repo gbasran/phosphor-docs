@@ -30,7 +30,7 @@ site:
   tagline: "~/project-name"       # Subtitle below logo
   logo_text: "PN"                 # 1-2 chars for logo icon
   github: "https://github.com/user/repo"  # GitHub link in sidebar
-  favicon: ""                     # Optional custom favicon path
+  favicon: ""                     # Optional custom favicon path (auto-themed if empty)
 
 theme:                            # Override CSS color variables (all optional)
   accent: "#8b5cf6"               # Primary accent

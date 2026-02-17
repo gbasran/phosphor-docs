@@ -49,17 +49,44 @@ def build(project_dir, output_dir=None):
 
     # Copy theme assets
     theme_dir = os.path.join(phosphor_root, "theme")
-    for fname in ("style.css", "script.js", "favicon.svg"):
+    for fname in ("style.css", "script.js"):
         src = os.path.join(theme_dir, fname)
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(output_dir, "assets", fname))
 
-    # Copy custom favicon if specified
+    # Generate themed favicon
     custom_favicon = cfg["site"].get("favicon", "")
     if custom_favicon:
+        # User-provided custom favicon — copy as-is
         custom_path = os.path.join(project_dir, custom_favicon)
         if os.path.exists(custom_path):
             shutil.copy2(custom_path, os.path.join(output_dir, "assets", "favicon.svg"))
+    else:
+        # Generate favicon from theme colors and logo_text
+        theme = cfg.get("theme", {})
+        accent = theme.get("accent", "#22d3a7")
+        accent_dim = theme.get("accent_dim", "#1a9e7e")
+        bg_deep = theme.get("bg_deep", "#080c14")
+        logo_text = cfg["site"].get("logo_text", "PD")
+
+        favicon_svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">\n'
+            '  <defs>\n'
+            '    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">\n'
+            f'      <stop offset="0%" stop-color="{accent}"/>\n'
+            f'      <stop offset="100%" stop-color="{accent_dim}"/>\n'
+            '    </linearGradient>\n'
+            '  </defs>\n'
+            f'  <rect width="32" height="32" rx="6" fill="url(#g)"/>\n'
+            f'  <text x="16" y="22" text-anchor="middle" '
+            f'font-family="system-ui,sans-serif" font-weight="700" '
+            f'font-size="14" fill="{bg_deep}">{logo_text}</text>\n'
+            '</svg>\n'
+        )
+
+        favicon_path = os.path.join(output_dir, "assets", "favicon.svg")
+        with open(favicon_path, "w") as f:
+            f.write(favicon_svg)
 
     # Parse all pages
     pages_data = []
