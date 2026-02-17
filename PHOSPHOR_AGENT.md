@@ -32,6 +32,27 @@ site:
   github: "https://github.com/user/repo"  # GitHub link in sidebar
   favicon: ""                     # Optional custom favicon path
 
+theme:                            # Override CSS color variables (all optional)
+  accent: "#8b5cf6"               # Primary accent
+  accent_dim: "#7c3aed"           # Accent hover/darker
+  accent_glow: "rgba(...)"        # Subtle accent overlay
+  accent_glow_strong: "rgba(...)" # Stronger accent overlay
+  accent_warm: "#c084fc"          # Warm accent (tips, warnings)
+  accent_warm_dim: "rgba(...)"    # Subtle warm overlay
+  accent_red: "#f472b6"           # Red (errors)
+  accent_blue: "#818cf8"          # Blue (info callouts)
+  accent_purple: "#c084fc"        # Purple (code syntax)
+  bg_deep: "#070312"              # Body background
+  bg_surface: "#0e0822"           # Sidebar, cards
+  bg_raised: "#160f2e"            # Elevated elements
+  bg_hover: "#1e1438"             # Hover states
+  code_bg: "#080418"              # Code blocks
+  text: "#b4b0c8"                 # Body text
+  text_bright: "#e8e4f0"          # Headings
+  text_dim: "#6e6890"             # Labels, captions
+  border: "#1c1535"               # Borders
+  border_bright: "#2a2048"        # Prominent borders
+
 nav:
   - group: "Section Label"        # Sidebar group heading (uppercase)
     items:

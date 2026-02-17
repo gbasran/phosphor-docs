@@ -14,6 +14,12 @@ site:
   github: "https://github.com/user/repo"  # GitHub link (shown in sidebar footer)
   favicon: ""                   # Custom favicon path (relative to project dir, optional)
 
+theme:                          # Override any CSS color variable (all optional)
+  accent: "#8b5cf6"
+  accent_dim: "#7c3aed"
+  bg_deep: "#070312"
+  # ... see Theming section for all available keys
+
 nav:
   - group: "Group Label"        # Sidebar section label (uppercase, small text)
     items:
@@ -202,19 +208,75 @@ Phosphor uses three font families loaded from Google Fonts:
 
 ### Customizing Colors
 
-To customize the theme, edit the CSS variables in `theme/style.css` at your Phosphor installation. For example, to change the accent color from teal to blue:
+Add a `theme:` section to your project's `docs.yaml` to override any color variable. Overrides are injected as a `<style>` block after the base stylesheet, so they take precedence without modifying the Phosphor installation.
+
+#### Available Theme Keys
+
+| Key | CSS Variable | Default | Description |
+| --- | --- | --- | --- |
+| `accent` | `--accent` | `#22d3a7` | Primary accent color |
+| `accent_dim` | `--accent-dim` | `#1a9e7e` | Accent hover / darker variant |
+| `accent_glow` | `--accent-glow` | `rgba(34,211,167,0.08)` | Subtle accent overlay |
+| `accent_glow_strong` | `--accent-glow-strong` | `rgba(34,211,167,0.18)` | Stronger accent overlay |
+| `accent_warm` | `--accent-warm` | `#f0a500` | Warm accent (warnings, tips) |
+| `accent_warm_dim` | `--accent-warm-dim` | `rgba(240,165,0,0.08)` | Subtle warm overlay |
+| `accent_red` | `--accent-red` | `#f47067` | Red accent (errors) |
+| `accent_blue` | `--accent-blue` | `#58a6ff` | Blue accent (info callouts) |
+| `accent_purple` | `--accent-purple` | `#bc8cff` | Purple accent (code syntax) |
+| `bg_deep` | `--bg-deep` | `#080c14` | Deepest background (body) |
+| `bg_surface` | `--bg-surface` | `#0e1320` | Sidebar, cards, surfaces |
+| `bg_raised` | `--bg-raised` | `#151c2c` | Elevated elements |
+| `bg_hover` | `--bg-hover` | `#1a2338` | Hover states |
+| `code_bg` | `--code-bg` | `#0a1018` | Code block backgrounds |
+| `text` | `--text` | `#aab4c5` | Body text |
+| `text_bright` | `--text-bright` | `#e2e8f2` | Headings, emphasis |
+| `text_dim` | `--text-dim` | `#6b7a8f` | Labels, captions |
+| `border` | `--border` | `#1a2236` | Subtle borders |
+| `border_bright` | `--border-bright` | `#253048` | Prominent borders |
+
+All keys are optional — only override the ones you want to change.
+
+#### Example: Endgame Theme
+
+A purple-dominant color scheme inspired by Avengers: Endgame. Deep space purples with violet accents.
 
 ```
-:root {
-  --accent: #58a6ff;
-  --accent-dim: #4488cc;
-  --accent-glow: rgba(88, 166, 255, 0.08);
-  --accent-glow-strong: rgba(88, 166, 255, 0.18);
-}
+theme:
+  bg_deep: "#070312"
+  bg_surface: "#0e0822"
+  bg_raised: "#160f2e"
+  bg_hover: "#1e1438"
+  code_bg: "#080418"
+  accent: "#8b5cf6"
+  accent_dim: "#7c3aed"
+  accent_glow: "rgba(139, 92, 246, 0.10)"
+  accent_glow_strong: "rgba(139, 92, 246, 0.22)"
+  accent_warm: "#c084fc"
+  accent_warm_dim: "rgba(192, 132, 252, 0.10)"
+  accent_red: "#f472b6"
+  accent_blue: "#818cf8"
+  accent_purple: "#c084fc"
+  text: "#b4b0c8"
+  text_bright: "#e8e4f0"
+  text_dim: "#6e6890"
+  border: "#1c1535"
+  border_bright: "#2a2048"
 ```
 
-:::warn Theme changes are global
-Editing `theme/style.css` in the Phosphor installation affects all sites built with that installation. If you need different themes per project, consider maintaining separate Phosphor installations or copying the theme files into your project.
+#### Example: Minimal Override
+
+You don't need to override everything. To just change the accent from teal to blue:
+
+```
+theme:
+  accent: "#58a6ff"
+  accent_dim: "#4488cc"
+  accent_glow: "rgba(88, 166, 255, 0.08)"
+  accent_glow_strong: "rgba(88, 166, 255, 0.18)"
+```
+
+:::tip Per-project theming
+The `theme:` config is per-project — each site can have its own color scheme without modifying the Phosphor installation. The base Terminal Noir theme is used for any variable you don't override.
 :::
 
 ### Custom Favicon
