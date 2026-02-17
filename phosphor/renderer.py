@@ -6,7 +6,6 @@ Builds sidebar nav HTML from config.
 
 import os
 import html as html_mod
-import urllib.parse
 
 
 def _escape(text):
@@ -104,30 +103,14 @@ def render_page(template, config, page_content, nav_html, page_filename):
     # Build the page title
     page_title = site["title"]
 
-    # Build favicon — inline data URI so it always matches the theme
+    # Favicon — file-based with cache-busting query param from theme accent
     custom_favicon = site.get("favicon", "")
     if custom_favicon:
         favicon = "assets/favicon.svg"
     else:
         theme = config.get("theme", {})
-        accent = theme.get("accent", "#22d3a7")
-        accent_dim = theme.get("accent_dim", "#1a9e7e")
-        bg_deep = theme.get("bg_deep", "#080c14")
-        logo_text = _escape(site.get("logo_text", "PD"))
-
-        favicon_svg = (
-            "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
-            "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"
-            f"<stop offset='0%25' stop-color='{accent}'/>"
-            f"<stop offset='100%25' stop-color='{accent_dim}'/>"
-            "</linearGradient></defs>"
-            f"<rect width='32' height='32' rx='6' fill='url(%23g)'/>"
-            f"<text x='16' y='22' text-anchor='middle' "
-            f"font-family='system-ui,sans-serif' font-weight='700' "
-            f"font-size='14' fill='{bg_deep}'>{logo_text}</text>"
-            "</svg>"
-        )
-        favicon = "data:image/svg+xml," + favicon_svg
+        accent = theme.get("accent", "#22d3a7").replace("#", "")
+        favicon = f"assets/favicon.svg?v={accent}"
 
     # GitHub link
     github_url = site.get("github", "")
