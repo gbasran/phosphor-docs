@@ -56,6 +56,46 @@ def build_toc_html(headings):
     return html
 
 
+def build_theme_css(theme_config):
+    """Build CSS variable overrides from theme config."""
+    if not theme_config:
+        return ""
+
+    # Map docs.yaml theme keys to CSS custom properties
+    key_map = {
+        "accent": "--accent",
+        "accent_dim": "--accent-dim",
+        "accent_glow": "--accent-glow",
+        "accent_glow_strong": "--accent-glow-strong",
+        "accent_warm": "--accent-warm",
+        "accent_warm_dim": "--accent-warm-dim",
+        "accent_red": "--accent-red",
+        "accent_blue": "--accent-blue",
+        "accent_purple": "--accent-purple",
+        "bg_deep": "--bg-deep",
+        "bg_surface": "--bg-surface",
+        "bg_raised": "--bg-raised",
+        "bg_hover": "--bg-hover",
+        "code_bg": "--code-bg",
+        "text": "--text",
+        "text_bright": "--text-bright",
+        "text_dim": "--text-dim",
+        "border": "--border",
+        "border_bright": "--border-bright",
+    }
+
+    overrides = []
+    for yaml_key, css_var in key_map.items():
+        if yaml_key in theme_config:
+            overrides.append(f"    {css_var}: {theme_config[yaml_key]};")
+
+    if not overrides:
+        return ""
+
+    lines = "\n".join(overrides)
+    return f"<style>\n  :root {{\n{lines}\n  }}\n</style>"
+
+
 def render_page(template, config, page_content, nav_html, page_filename):
     """Render a page by substituting variables into the template."""
     site = config["site"]
@@ -84,8 +124,12 @@ def render_page(template, config, page_content, nav_html, page_filename):
             f'</a>'
         )
 
+    # Theme overrides
+    theme_css = build_theme_css(config.get("theme", {}))
+
     # Substitutions
     output = template
+    output = output.replace("{{THEME_CSS}}", theme_css)
     output = output.replace("{{TITLE}}", _escape(page_title))
     output = output.replace("{{SITE_TITLE}}", _escape(site["title"]))
     output = output.replace("{{TAGLINE}}", _escape(site.get("tagline", "")))

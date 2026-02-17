@@ -12,6 +12,7 @@ DEFAULTS = {
         "github": "",
         "favicon": "",
     },
+    "theme": {},
     "nav": [],
     "pages": [],
 }
@@ -32,6 +33,7 @@ def load_config(config_path):
     site.update(raw.get("site", {}))
     cfg["site"] = site
 
+    cfg["theme"] = raw.get("theme", DEFAULTS["theme"])
     cfg["nav"] = raw.get("nav", DEFAULTS["nav"])
     cfg["pages"] = raw.get("pages", DEFAULTS["pages"])
 
