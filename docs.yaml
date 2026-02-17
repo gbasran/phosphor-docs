@@ -4,6 +4,27 @@ site:
   logo_text: "PD"
   github: "https://github.com/gbasran/phosphor-docs"
 
+theme:
+  bg_deep: "#09080c"
+  bg_surface: "#12101a"
+  bg_raised: "#1c1828"
+  bg_hover: "#252034"
+  code_bg: "#0c0a12"
+  accent: "#f97316"
+  accent_dim: "#ea580c"
+  accent_glow: "rgba(249, 115, 22, 0.10)"
+  accent_glow_strong: "rgba(249, 115, 22, 0.22)"
+  accent_warm: "#facc15"
+  accent_warm_dim: "rgba(250, 204, 21, 0.10)"
+  accent_red: "#f43f5e"
+  accent_blue: "#38bdf8"
+  accent_purple: "#c084fc"
+  text: "#b8b2c8"
+  text_bright: "#ede9f5"
+  text_dim: "#7a7290"
+  border: "#1e1a2e"
+  border_bright: "#2e2842"
+
 nav:
   - group: "Getting Started"
     items:
@@ -53,6 +74,10 @@ nav:
         icon: "palette"
         page: "configuration.md"
         anchor: "theming"
+      - label: "Custom Palettes"
+        icon: "paintbrush"
+        page: "configuration.md"
+        anchor: "building-a-custom-palette"
 
   - group: "Reference"
     items:
