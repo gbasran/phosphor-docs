@@ -102,3 +102,27 @@ my-project-docs/
       search.js
       favicon.svg
 ```
+
+### AI Agent Authoring
+
+AI coding agents (Claude Code, Codex, Gemini CLI) can write phosphor documentation for any project. Point an agent at your codebase and tell it to create phosphor docs — it reads the project, understands the structure, and writes all the `.md` pages and `docs.yaml` config.
+
+```terminal
+# Example: have an agent write docs for your project
+$ cd ~/my-project
+$ claude "Create phosphor documentation for this project. Read ~/phosphor-docs/CLAUDE.md for the syntax reference."
+$ phosphor build
+```
+
+The phosphor-docs repo includes agent instruction files that teach any AI tool the full syntax:
+
+:::decision-grid
+| File | Tool | Purpose |
+| --- | --- | --- |
+| `CLAUDE.md` | Claude Code | Auto-read by Claude when working in the repo |
+| `AGENTS.md` | Codex | Auto-read by Codex |
+| `GEMINI.md` | Gemini CLI | Auto-read by Gemini |
+| `PHOSPHOR_AGENT.md` | Any | Full syntax reference (tool-agnostic) |
+:::
+
+The agent reference covers: complete `docs.yaml` config, all `:::` component blocks, page structure rules, build commands, and common page patterns (homepage, reference, FAQ).
