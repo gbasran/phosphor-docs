@@ -1,0 +1,28 @@
+site:
+  title: "My Project Docs"
+  tagline: "~/my-project"
+  logo_text: "MP"
+  github: "https://github.com/user/my-project"
+
+nav:
+  - group: "Getting Started"
+    items:
+      - label: "Overview"
+        icon: "home"
+        page: "index.md"
+        anchor: "overview"
+      - label: "Getting Started"
+        icon: "zap"
+        page: "getting-started.md"
+        anchor: "getting-started"
+
+  - group: "Reference"
+    items:
+      - label: "Commands"
+        icon: "terminal"
+        page: "getting-started.md"
+        anchor: "commands"
+
+pages:
+  - index.md
+  - getting-started.md

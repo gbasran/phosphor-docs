@@ -1,0 +1,101 @@
+site:
+  title: "Phosphor Docs"
+  tagline: "~/phosphor-docs"
+  logo_text: "PD"
+  github: "https://github.com/gbasran/phosphor-docs"
+
+nav:
+  - group: "Getting Started"
+    items:
+      - label: "Overview"
+        icon: "home"
+        page: "index.md"
+        anchor: "overview"
+      - label: "Quickstart"
+        icon: "zap"
+        page: "getting-started.md"
+        anchor: "quickstart"
+      - label: "Installation"
+        icon: "download"
+        page: "getting-started.md"
+        anchor: "installation"
+
+  - group: "Authoring"
+    items:
+      - label: "Standard Markdown"
+        icon: "file-text"
+        page: "writing-content.md"
+        anchor: "standard-markdown"
+      - label: "Components"
+        icon: "layout-grid"
+        page: "writing-content.md"
+        anchor: "components"
+      - label: "Page Structure"
+        icon: "layers"
+        page: "writing-content.md"
+        anchor: "page-structure"
+
+  - group: "Configuration"
+    items:
+      - label: "docs.yaml"
+        icon: "settings"
+        page: "configuration.md"
+        anchor: "docs-yaml"
+      - label: "Navigation"
+        icon: "compass"
+        page: "configuration.md"
+        anchor: "navigation"
+      - label: "Theming"
+        icon: "palette"
+        page: "configuration.md"
+        anchor: "theming"
+
+  - group: "Reference"
+    items:
+      - label: "CLI Commands"
+        icon: "terminal"
+        page: "reference.md"
+        anchor: "cli-commands"
+      - label: "Architecture"
+        icon: "cpu"
+        page: "reference.md"
+        anchor: "architecture"
+      - label: "Deployment"
+        icon: "rocket"
+        page: "reference.md"
+        anchor: "deployment"
+      - label: "Troubleshooting"
+        icon: "triangle-alert"
+        page: "reference.md"
+        anchor: "troubleshooting"
+      - label: "FAQ"
+        icon: "circle-help"
+        page: "reference.md"
+        anchor: "faq"
+
+  - group: "Internals"
+    items:
+      - label: "How It Works"
+        icon: "cpu"
+        page: "internals.md"
+        anchor: "how-phosphor-works"
+      - label: "The Parser"
+        icon: "code"
+        page: "internals.md"
+        anchor: "the-parser-in-depth"
+      - label: "The Theme"
+        icon: "palette"
+        page: "internals.md"
+        anchor: "the-theme"
+      - label: "Extending"
+        icon: "puzzle"
+        page: "internals.md"
+        anchor: "extending-phosphor"
+
+pages:
+  - index.md
+  - getting-started.md
+  - writing-content.md
+  - configuration.md
+  - reference.md
+  - internals.md

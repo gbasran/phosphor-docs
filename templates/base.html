@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{FAVICON}}">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle menu"><i data-lucide="menu"></i></button>
+
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a href="index.html" class="sidebar-logo">
+        <span class="logo-icon">{{LOGO_TEXT}}</span>
+        {{SITE_TITLE}}
+      </a>
+      <div class="sidebar-version">{{TAGLINE}}</div>
+    </div>
+    <div class="sidebar-search">
+      <div class="search-wrapper">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" class="search-input" placeholder="Search docs..." autocomplete="off" spellcheck="false">
+        <kbd class="search-shortcut">/</kbd>
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <div class="sidebar-nav">
+      {{NAV}}
+    </div>
+    {{GITHUB_LINK}}
+  </nav>
+
+  <div class="main">
+    <div class="toc"></div>
+    <div class="content">
+      {{CONTENT}}
+
+      <div class="footer">
+        Built with <a href="https://github.com/gbasran/phosphor-docs">Phosphor</a>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+    <i data-lucide="arrow-up"></i>
+  </button>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>lucide.createIcons();</script>
+  <script src="assets/script.js"></script>
+  <script src="assets/search.js"></script>
+</body>
+</html>
