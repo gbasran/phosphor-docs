@@ -5,12 +5,24 @@ writes output to _site/ directory.
 """
 
 import os
+import re
 import shutil
+import sys
 
 from . import config as config_mod
 from . import parser as parser_mod
 from . import renderer as renderer_mod
 from . import search as search_mod
+
+
+def _is_safe_path(path, allowed_dir):
+    """Check that *path* resolves inside *allowed_dir* (prevents traversal)."""
+    real = os.path.realpath(path)
+    allowed = os.path.realpath(allowed_dir)
+    return real == allowed or real.startswith(allowed + os.sep)
+
+
+_COLOR_RE = re.compile(r"^(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))$")
 
 
 def build(project_dir, output_dir=None):
@@ -33,17 +45,27 @@ def build(project_dir, output_dir=None):
 
     # Load base template
     template_path = os.path.join(phosphor_root, "templates", "base.html")
+    if not os.path.exists(template_path):
+        print(f"Error: base template not found: {template_path}", file=sys.stderr)
+        sys.exit(1)
     with open(template_path, "r") as f:
         template = f.read()
 
     # Load search.js template
     search_js_path = os.path.join(phosphor_root, "theme", "search.js")
+    if not os.path.exists(search_js_path):
+        print(f"Error: search.js template not found: {search_js_path}", file=sys.stderr)
+        sys.exit(1)
     with open(search_js_path, "r") as f:
         search_js_template = f.read()
 
     # Clean and create output directory
     if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
+        try:
+            shutil.rmtree(output_dir)
+        except PermissionError as e:
+            print(f"Error: cannot remove output directory: {e}", file=sys.stderr)
+            sys.exit(1)
     os.makedirs(output_dir)
     os.makedirs(os.path.join(output_dir, "assets"))
 
@@ -57,10 +79,15 @@ def build(project_dir, output_dir=None):
     # Generate themed favicon
     custom_favicon = cfg["site"].get("favicon", "")
     if custom_favicon:
-        # User-provided custom favicon — copy as-is
+        # User-provided custom favicon — copy only if inside project dir
         custom_path = os.path.join(project_dir, custom_favicon)
+        if not _is_safe_path(custom_path, project_dir):
+            print(f"  Error: favicon path escapes project directory: {custom_favicon}", file=sys.stderr)
+            sys.exit(1)
         if os.path.exists(custom_path):
             shutil.copy2(custom_path, os.path.join(output_dir, "assets", "favicon.svg"))
+        else:
+            print(f"  Warning: favicon not found: {custom_favicon}", file=sys.stderr)
     else:
         # Generate favicon from theme colors and logo_text
         theme = cfg.get("theme", {})
@@ -68,6 +95,15 @@ def build(project_dir, output_dir=None):
         accent_dim = theme.get("accent_dim", "#1a9e7e")
         bg_deep = theme.get("bg_deep", "#080c14")
         logo_text = cfg["site"].get("logo_text", "PD")
+
+        # Validate that color values look safe before injecting into SVG
+        for color_name, color_val in [("accent", accent), ("accent_dim", accent_dim), ("bg_deep", bg_deep)]:
+            if not _COLOR_RE.match(str(color_val)):
+                print(f"  Error: invalid theme color for {color_name}: {color_val!r}", file=sys.stderr)
+                sys.exit(1)
+
+        from . renderer import _escape
+        safe_logo = _escape(str(logo_text))
 
         favicon_svg = (
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">\n'
@@ -80,7 +116,7 @@ def build(project_dir, output_dir=None):
             f'  <rect width="32" height="32" rx="6" fill="url(#g)"/>\n'
             f'  <text x="16" y="22" text-anchor="middle" '
             f'font-family="system-ui,sans-serif" font-weight="700" '
-            f'font-size="14" fill="{bg_deep}">{logo_text}</text>\n'
+            f'font-size="14" fill="{bg_deep}">{safe_logo}</text>\n'
             '</svg>\n'
         )
 
@@ -92,10 +128,17 @@ def build(project_dir, output_dir=None):
     pages_data = []
     pages_dir = os.path.join(project_dir, "pages")
 
+    if not os.path.isdir(pages_dir):
+        print(f"Error: pages/ directory not found at {pages_dir}", file=sys.stderr)
+        sys.exit(1)
+
     for page_file in cfg["pages"]:
         page_path = os.path.join(pages_dir, page_file)
+        if not _is_safe_path(page_path, pages_dir):
+            print(f"  Error: page path escapes pages/ directory: {page_file}", file=sys.stderr)
+            sys.exit(1)
         if not os.path.exists(page_path):
-            print(f"  Warning: Page not found: {page_file}")
+            print(f"  Warning: Page not found: {page_file}", file=sys.stderr)
             continue
 
         with open(page_path, "r") as f:

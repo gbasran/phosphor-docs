@@ -76,7 +76,11 @@ def cmd_build(args):
 
     project_dir = args.dir or "."
     print(f"Building site from {os.path.abspath(project_dir)}...")
-    build_mod.build(project_dir)
+    try:
+        build_mod.build(project_dir)
+    except Exception as e:
+        print(f"Error: Build failed: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def cmd_init(args):
@@ -87,9 +91,18 @@ def cmd_init(args):
     phosphor_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     examples_dir = os.path.join(phosphor_root, "examples")
 
+    if not os.path.isdir(examples_dir):
+        print(f"Error: examples/ directory not found at {examples_dir}", file=sys.stderr)
+        print("Phosphor installation may be incomplete.", file=sys.stderr)
+        sys.exit(1)
+
     # Create pages directory
     pages_dir = os.path.join(target_dir, "pages")
-    os.makedirs(pages_dir, exist_ok=True)
+    try:
+        os.makedirs(pages_dir, exist_ok=True)
+    except OSError as e:
+        print(f"Error: cannot create pages directory: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Detect git info for auto-populating config
     # Walk up from target_dir to find a git repo
@@ -159,23 +172,47 @@ def cmd_serve(args):
     project_dir = args.dir or "."
     site_dir = os.path.join(os.path.abspath(project_dir), "_site")
 
+    port = args.port or 8000
+    if not (1 <= port <= 65535):
+        print(f"Error: port must be between 1 and 65535, got {port}", file=sys.stderr)
+        sys.exit(1)
+
     # Build first
     print(f"Building site from {os.path.abspath(project_dir)}...")
-    build_mod.build(project_dir)
+    try:
+        build_mod.build(project_dir)
+    except Exception as e:
+        print(f"Error: Build failed: {e}", file=sys.stderr)
+        sys.exit(1)
     print()
 
     if not os.path.exists(site_dir):
-        print("Error: _site/ directory not found. Build failed?")
+        print("Error: _site/ directory not found. Build failed?", file=sys.stderr)
         sys.exit(1)
 
-    port = args.port or 8000
     print(f"Serving at http://localhost:{port}")
     print("Press Ctrl+C to stop.\n")
 
     os.chdir(site_dir)
-    handler = http.server.SimpleHTTPRequestHandler
-    handler.log_message = lambda self, fmt, *a: print(f"  {a[0]} {a[1]}")
-    server = http.server.HTTPServer(("", port), handler)
+
+    class _Handler(http.server.SimpleHTTPRequestHandler):
+        # Add SVG MIME type
+        extensions_map = {
+            **http.server.SimpleHTTPRequestHandler.extensions_map,
+            ".svg": "image/svg+xml",
+        }
+
+        def log_message(self, fmt, *a):
+            print(f"  {a[0]} {a[1]}")
+
+    try:
+        server = http.server.HTTPServer(("", port), _Handler)
+    except OSError as e:
+        if "Address already in use" in str(e) or "address already in use" in str(e):
+            print(f"Error: port {port} is already in use. Try a different port with -p.", file=sys.stderr)
+        else:
+            print(f"Error: cannot start server: {e}", file=sys.stderr)
+        sys.exit(1)
 
     try:
         server.serve_forever()

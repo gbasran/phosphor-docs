@@ -91,5 +91,9 @@ def _find_nav_group(section_id, headings):
 
 
 def inject_search_index(search_js_template, index_json):
-    """Replace {{SEARCH_INDEX}} placeholder in search.js with actual index."""
+    """Replace {{SEARCH_INDEX}} placeholder in search.js with actual index.
+
+    Safety: index_json is produced by json.dumps() which outputs valid JSON
+    safe for embedding in a JS variable assignment.
+    """
     return search_js_template.replace("{{SEARCH_INDEX}}", index_json)

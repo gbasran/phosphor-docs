@@ -87,7 +87,10 @@ def build_theme_css(theme_config):
     overrides = []
     for yaml_key, css_var in key_map.items():
         if yaml_key in theme_config:
-            overrides.append(f"    {css_var}: {theme_config[yaml_key]};")
+            val = theme_config[yaml_key]
+            if not isinstance(val, str):
+                continue
+            overrides.append(f"    {css_var}: {val};")
 
     if not overrides:
         return ""

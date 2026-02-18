@@ -6,6 +6,7 @@ Also handles ```terminal blocks and {.class} attribute syntax.
 """
 
 import re
+import sys
 import html as html_mod
 
 
@@ -19,6 +20,14 @@ def slugify(text):
 def _escape(text):
     """HTML-escape text."""
     return html_mod.escape(text)
+
+
+def _escape_url(url):
+    """Escape a URL for use in HTML attributes; reject javascript: URIs."""
+    url = url.strip()
+    if re.match(r"^\s*javascript\s*:", url, re.IGNORECASE):
+        return "#"
+    return html_mod.escape(url, quote=True)
 
 
 # ── Inline Markdown ──
@@ -44,16 +53,22 @@ def _inline(text):
 
     # Step 2: Process other inline elements on the remaining text
     # Images: ![alt](src)
-    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img src="\2" alt="\1">', text)
+    def _img_replace(m):
+        alt, src = _escape(m.group(1)), _escape_url(m.group(2))
+        return f'<img src="{src}" alt="{alt}">'
+    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img_replace, text)
 
     # Links with class: [text](url){.class}
     def _link_class(m):
-        label, url, cls = m.group(1), m.group(2), m.group(3)
+        label, url, cls = m.group(1), _escape_url(m.group(2)), m.group(3)
         return f'<a href="{url}" class="hero-btn {cls}">{label}</a>'
     text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)\{\.(\w+)\}', _link_class, text)
 
     # Regular links: [text](url)
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
+    def _link_replace(m):
+        label, url = m.group(1), _escape_url(m.group(2))
+        return f'<a href="{url}">{label}</a>'
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link_replace, text)
 
     # Bold
     text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
@@ -102,7 +117,7 @@ def _parse_attrs(attr_str):
     attrs = {}
     if not attr_str:
         return attrs
-    for m in re.finditer(r'(\w+)="([^"]*)"', attr_str):
+    for m in re.finditer(r'([\w-]+)="([^"]*)"', attr_str):
         attrs[m.group(1)] = m.group(2)
     return attrs
 
@@ -126,7 +141,7 @@ def _parse_hero(content, attrs):
             # Button link: [Label](url){.class}
             m = re.match(r'\[([^\]]+)\]\(([^)]+)\)\{\.(\w+)\}', line)
             if m:
-                label, url, cls = m.group(1), m.group(2), m.group(3)
+                label, url, cls = m.group(1), _escape_url(m.group(2)), m.group(3)
                 buttons_html += f'          <a href="{url}" class="hero-btn {cls}">{label}</a>\n'
         elif line:
             desc_html += f"<p>{_inline(line)}</p>\n"
@@ -148,12 +163,12 @@ def _parse_callout(content, attrs, callout_type):
     lines = content.strip().split("\n")
     title = lines[0].strip() if lines else callout_type.title()
     body = "\n".join(lines[1:]).strip() if len(lines) > 1 else ""
-    body_html = _inline(body) if body else ""
+    body_html = _process_block_content(body) if body else ""
 
     return (
         f'<div class="callout {callout_type}">\n'
         f'  <div class="callout-title">{_escape(title)}</div>\n'
-        f'  <p>{body_html}</p>\n'
+        f'  <div class="callout-body">{body_html}</div>\n'
         f'</div>\n'
     )
 
@@ -466,12 +481,16 @@ def _parse_markdown_table(lines):
     # Skip separator (line 1)
     data_lines = lines[2:] if len(lines) > 2 else []
 
+    col_count = len(header_cells)
     thead = "<thead><tr>" + "".join(f"<th>{_escape(c)}</th>" for c in header_cells) + "</tr></thead>\n"
     tbody_rows = ""
     for line in data_lines:
         if not line.strip():
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
+        # Pad short rows with empty cells to match header count
+        while len(cells) < col_count:
+            cells.append("")
         tbody_rows += "<tr>" + "".join(f"<td>{_inline(c)}</td>" for c in cells) + "</tr>\n"
 
     return (
@@ -497,7 +516,7 @@ def parse_markdown(text):
 
     # Extract headings for TOC
     headings = []
-    for m in re.finditer(r'<(?:div class="section" id|h3 id)="([^"]+)"[^>]*>\s*(?:<[^>]+>\s*)*(?:<h[23][^>]*>)?(.*?)</h[23]>', html):
+    for m in re.finditer(r'<(?:div class="section" id|h3 id)="([^"]+)"[^>]*>\s*(?:<[^>]+>\s*){0,5}(?:<h[23][^>]*>)?(.*?)</h[23]>', html):
         tag_id = m.group(1)
         # Determine level from context
         if 'class="section"' in m.group(0):
@@ -526,37 +545,82 @@ def parse_markdown(text):
 
 
 def _process_fenced_blocks(text):
-    """Process ::: fenced blocks and replace them with HTML."""
+    """Process ::: fenced blocks and replace them with HTML.
+
+    Tracks code fence state so that ```::: ``` inside a code fence is not
+    treated as a component delimiter.  Warns on unclosed ::: blocks.
+    """
     result = []
     lines = text.split("\n")
     i = 0
 
     while i < len(lines):
         line = lines[i]
+        stripped = line.strip()
 
-        # Check for ::: block start
-        m = re.match(r"^:::(tip|info|warn|cards|decision-grid|command|accordion|pipeline|hero)\s*(\{[^}]*\})?\s*(.*)$", line.strip())
+        # Skip over code fences — pass lines through until fence closes
+        fence_match = re.match(r"^(`{3,})", stripped)
+        if fence_match:
+            fence_str = fence_match.group(1)
+            result.append(line)
+            i += 1
+            while i < len(lines):
+                s = lines[i].strip()
+                result.append(lines[i])
+                i += 1
+                if s == fence_str or (s.startswith(fence_str) and not s[len(fence_str):].strip()):
+                    break
+            continue
+
+        # Check for ::: block start (supports hyphenated types like decision-grid)
+        m = re.match(r"^:::([a-z][a-z0-9-]*)\s*(\{[^}]*\})?\s*(.*)$", stripped)
         if m:
             block_type = m.group(1)
             attr_str = m.group(2) or ""
             inline_title = m.group(3).strip()
             attrs = _parse_attrs(attr_str)
+            start_line = i + 1
 
-            # Collect block content until closing :::
+            # Collect block content until closing :::, respecting code fences
             i += 1
             block_lines = []
             depth = 1
+            in_fence = False
+            code_fence_str = ""
             while i < len(lines):
-                stripped = lines[i].strip()
-                if stripped == ":::":
-                    depth -= 1
-                    if depth == 0:
-                        break
-                elif re.match(r"^:::\w+", stripped):
-                    depth += 1
+                s = lines[i].strip()
+
+                # Track code fence state inside ::: blocks
+                if not in_fence:
+                    fm = re.match(r"^(`{3,})", s)
+                    if fm:
+                        in_fence = True
+                        code_fence_str = fm.group(1)
+                else:
+                    if s == code_fence_str or (s.startswith(code_fence_str) and not s[len(code_fence_str):].strip()):
+                        in_fence = False
+
+                # Only match ::: delimiters outside code fences
+                if not in_fence:
+                    if s == ":::":
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    elif re.match(r"^:::[a-z][a-z0-9-]*", s):
+                        depth += 1
+
                 block_lines.append(lines[i])
                 i += 1
-            i += 1  # skip closing :::
+
+            if depth != 0:
+                # Unclosed block — warn and treat collected content as the block
+                print(
+                    f"  Warning: Unclosed :::{block_type} block (started near line {start_line}); "
+                    f"treating rest of file as block content",
+                    file=sys.stderr,
+                )
+            else:
+                i += 1  # skip closing :::
 
             block_content = "\n".join(block_lines)
 
@@ -578,6 +642,10 @@ def _process_fenced_blocks(text):
                 result.append(_parse_pipeline(block_content))
             elif block_type == "hero":
                 result.append(_parse_hero(block_content, attrs))
+            else:
+                # Unknown component type — pass through as-is
+                result.append(line)
+                result.extend(block_lines)
         else:
             result.append(line)
             i += 1
