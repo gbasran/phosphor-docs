@@ -2,6 +2,17 @@
 
 Release history for Phosphor Docs. Each entry documents what changed and why.
 
+## v0.2.1 — Duplicate Heading ID Fix
+
+Released 2026-02-18.
+
+### Bug Fixes
+
+- **Duplicate heading IDs**: When multiple headings on the same page share the same text (e.g. two "How It Works" sections), they now receive unique IDs (`how-it-works`, `how-it-works-2`, etc.). Previously, duplicate IDs caused the TOC scroll-spy to lock onto the wrong section and navigation links to jump to the first match instead of the intended heading
+- **Client-side ID dedup**: The JavaScript fallback ID generator for h3 headings now also deduplicates, preventing collisions with server-generated IDs
+
+---
+
 ## v0.2.0 — Security Hardening & Robustness
 
 Released 2026-02-18.

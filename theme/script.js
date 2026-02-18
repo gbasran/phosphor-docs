@@ -1,9 +1,28 @@
-// ── Generate IDs for h3 headings ──
+// ── Generate IDs for h3 headings (with dedup) ──
+var usedIds = {};
+function uniqueId(base) {
+  if (!usedIds[base]) {
+    usedIds[base] = 1;
+    return base;
+  }
+  usedIds[base]++;
+  return base + '-' + usedIds[base];
+}
+
+document.querySelectorAll('.content h2, .content h3').forEach(function(el) {
+  if (el.id) {
+    // Track server-generated IDs so client-side fallbacks don't collide
+    var base = el.id.replace(/-\d+$/, '');
+    if (!usedIds[base]) usedIds[base] = 1;
+    else usedIds[base]++;
+  }
+});
 document.querySelectorAll('.content h3').forEach(function(h3) {
   if (!h3.id) {
-    h3.id = h3.textContent.trim().toLowerCase()
+    var base = h3.textContent.trim().toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+    h3.id = uniqueId(base);
   }
 });
 
@@ -30,6 +49,7 @@ if (toc) {
 
 // ── Scroll spy — highlight active sidebar link + TOC link ──
 var sections = document.querySelectorAll('.section[id]');
+var h3Elements = document.querySelectorAll('.content h3[id]');
 var navLinks = document.querySelectorAll('.sidebar-nav a');
 var tocAnchors = toc ? toc.querySelectorAll('a') : [];
 var backToTop = document.querySelector('.back-to-top');

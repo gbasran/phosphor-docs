@@ -17,6 +17,19 @@ def slugify(text):
     return text.strip("-")
 
 
+# Per-page tracker for heading IDs — ensures uniqueness when headings share text
+_used_ids = {}
+
+
+def _unique_id(base_id):
+    """Return a unique ID, appending -2, -3, etc. for duplicates."""
+    if base_id not in _used_ids:
+        _used_ids[base_id] = 1
+        return base_id
+    _used_ids[base_id] += 1
+    return f"{base_id}-{_used_ids[base_id]}"
+
+
 def _escape(text):
     """HTML-escape text."""
     return html_mod.escape(text)
@@ -355,7 +368,7 @@ def _process_block_content(text):
         # Heading h2
         if line.startswith("## "):
             heading_text = line[3:].strip()
-            hid = slugify(heading_text)
+            hid = _unique_id(slugify(heading_text))
             result.append(
                 f'<div class="section" id="{hid}">\n'
                 f'  <span class="section-anchor"></span>\n'
@@ -392,7 +405,7 @@ def _process_block_content(text):
         # Heading h3
         if line.startswith("### "):
             heading_text = line[4:].strip()
-            hid = slugify(heading_text)
+            hid = _unique_id(slugify(heading_text))
             result.append(f'<h3 id="{hid}">{_inline(heading_text)}</h3>\n')
             i += 1
             continue
@@ -508,6 +521,9 @@ def parse_markdown(text):
     Returns (html_content, headings) where headings is a list of
     {"level": 2|3, "text": str, "id": str} for TOC generation.
     """
+    # Reset the per-page ID counter so duplicate headings get unique suffixes
+    _used_ids.clear()
+
     # First pass: extract and process ::: fenced blocks
     text = _process_fenced_blocks(text)
 
