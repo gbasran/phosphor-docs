@@ -202,7 +202,7 @@ def _parse_cards(content):
 
 def _parse_decision_grid(content):
     """Parse decision grid (markdown table) into HTML."""
-    lines = [l.strip() for l in content.strip().split("\n") if l.strip()]
+    lines = [ln.strip() for ln in content.strip().split("\n") if ln.strip()]
     if len(lines) < 2:
         return f"<p>{_inline(content)}</p>"
 
@@ -210,7 +210,7 @@ def _parse_decision_grid(content):
     header_cells = [c.strip() for c in lines[0].strip("|").split("|")]
 
     # Skip separator line
-    data_lines = [l for l in lines[1:] if not re.match(r"^\|?\s*[-:]+", l)]
+    data_lines = [ln for ln in lines[1:] if not re.match(r"^\|?\s*[-:]+", ln)]
 
     header_html = "".join(f'<div class="dg-header">{_escape(c)}</div>' for c in header_cells)
 
@@ -300,7 +300,7 @@ def _parse_pipeline(content):
                 '<i data-lucide="arrow-right"></i>'
                 '</div>\n'
             )
-        num = f"0{i+1}" if i < 9 else str(i+1)
+        num = f"0{i + 1}" if i < 9 else str(i + 1)
         html += (
             f'<div class="pipeline-stage">\n'
             f'  <div class="pipeline-node">\n'
@@ -368,8 +368,8 @@ def _process_block_content(text):
             in_fence = False
             fence_str = ""
             while i < len(lines):
-                l = lines[i]
-                stripped = l.strip()
+                cur = lines[i]
+                stripped = cur.strip()
                 # Track code fence state
                 if not in_fence:
                     fm = re.match(r"^(`{3,})", stripped)
@@ -380,9 +380,9 @@ def _process_block_content(text):
                     if stripped == fence_str or (stripped.startswith(fence_str) and not stripped[len(fence_str):].strip()):
                         in_fence = False
                 # Only break on h2 if not inside a code fence
-                if not in_fence and l.startswith("## "):
+                if not in_fence and cur.startswith("## "):
                     break
-                section_lines.append(l)
+                section_lines.append(cur)
                 i += 1
             section_content = _process_block_content("\n".join(section_lines))
             result.append(section_content)
@@ -448,12 +448,12 @@ def _process_block_content(text):
             block_lines = [line]
             i += 1
             while i < len(lines):
-                l = lines[i].strip()
-                if not l:
+                cur = lines[i].strip()
+                if not cur:
                     i += 1
                     break
                 # Continue if it looks like HTML or content within HTML
-                if re.match(_html_block_re, l) or l.startswith("</") or l.startswith("<") or (block_lines and not l.startswith("#") and not l.startswith("```") and not re.match(r"^:::", l)):
+                if re.match(_html_block_re, cur) or cur.startswith("</") or cur.startswith("<") or (block_lines and not cur.startswith("#") and not cur.startswith("```") and not re.match(r"^:::", cur)):
                     block_lines.append(lines[i])
                     i += 1
                 else:
