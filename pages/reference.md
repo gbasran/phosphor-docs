@@ -25,13 +25,14 @@ Site built to /home/user/my-docs/_site/
 
 The build process:
 
-1. Loads and validates `docs.yaml`
-2. Reads each `.md` file listed in the `pages` array
-3. Parses Markdown into HTML (standard + extended components)
-4. Generates the search index from all headings and content
-5. Renders each page into the base HTML template
-6. Copies theme assets (CSS, JS, favicon) to `_site/assets/`
-7. Writes the final HTML files to `_site/`
+1. Loads and validates `docs.yaml` (checks types: `pages` and `nav` must be lists, `site` and `theme` must be mappings)
+2. Verifies that `pages/` directory exists and that all page paths stay within it (path traversal protection)
+3. Reads each `.md` file listed in the `pages` array
+4. Parses Markdown into HTML (standard + extended components)
+5. Generates the search index from all headings and content
+6. Renders each page into the base HTML template
+7. Copies theme assets (CSS, JS, favicon) to `_site/assets/`
+8. Writes the final HTML files to `_site/`
 
 :::info Clean builds
 Every build deletes and recreates the `_site/` directory from scratch. This ensures no stale files remain from previous builds. The `_site/` directory should be in your `.gitignore`.
@@ -83,11 +84,11 @@ Key behaviors:
 Path to the project directory containing `docs.yaml`. Defaults to the current directory.
 ::
 ::flag{name="--port" short="-p"}
-Port number for the local HTTP server. Defaults to 8000.
+Port number for the local HTTP server (1-65535). Defaults to 8000.
 ::
 :::
 
-Builds the site and starts a local HTTP server for previewing. This is a convenience command that combines `phosphor build` with Python's built-in HTTP server.
+Builds the site and starts a local HTTP server for previewing. This is a convenience command that combines `phosphor build` with Python's built-in HTTP server. Port numbers outside the valid range (1-65535) are rejected with a clear error. If the port is already in use, Phosphor prints a helpful message instead of crashing.
 
 ```terminal
 $ phosphor serve
@@ -202,7 +203,7 @@ The base HTML template at `templates/base.html` defines the page shell:
 | Dependency | Version | Purpose |
 | --- | --- | --- |
 | Python 3 | 3.8+ | Runtime |
-| PyYAML | 6.0+ | `docs.yaml` parsing |
+| PyYAML | 6.0 - 6.x | `docs.yaml` parsing |
 | Lucide Icons | CDN (latest) | Icon library (loaded at runtime from CDN) |
 | Google Fonts | CDN | Chakra Petch, Nunito Sans, JetBrains Mono |
 
@@ -311,6 +312,22 @@ The search index might be empty. Verify:
 
 :::accordion{title="Slow build on WSL2"}
 If your docs project is on the Windows filesystem (`/mnt/c/...`), file operations are slow due to the WSL2 filesystem bridge. Move your project to the Linux filesystem (`~/my-docs/`) for faster builds.
+:::
+
+:::accordion{title="Error: port must be between 1 and 65535"}
+The port number passed to `phosphor serve -p` is out of range. Use a port between 1 and 65535. Common choices: 3000, 5000, 8000, 8080.
+:::
+
+:::accordion{title="Error: port is already in use"}
+Another process is using that port. Either stop the other process or use a different port: `phosphor serve -p 3001`
+:::
+
+:::accordion{title="Error: page path escapes pages/ directory"}
+A file in the `pages` list references a path outside the `pages/` directory (e.g., `../../../etc/passwd`). Page paths must be simple filenames within the `pages/` directory. Remove any `../` or absolute paths from the `pages` list.
+:::
+
+:::accordion{title="Error: favicon path escapes project directory"}
+The `favicon` value in `docs.yaml` points outside the project directory. The favicon path must be relative and resolve within the project root. Remove any `../` sequences that escape the project.
 :::
 
 :::accordion{title="Lucide icons not rendering"}

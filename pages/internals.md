@@ -24,12 +24,12 @@ Config -> Parse -> Search -> Render -> Output
 Orchestrator. Loads config, iterates over pages, calls parser/renderer/search, copies assets, writes output. The only module that does file I/O for the build.
 ::
 
-::card{icon="settings" color="amber" title="config.py (38 lines)"}
-Loads docs.yaml with PyYAML, merges with DEFAULTS dict. Returns a plain dict. No validation beyond YAML parsing.
+::card{icon="settings" color="amber" title="config.py (~60 lines)"}
+Loads docs.yaml with PyYAML, merges with DEFAULTS dict. Validates types: `pages` and `nav` must be lists, `site` and `theme` must be mappings. Exits with clear error on invalid types.
 ::
 
-::card{icon="code" color="blue" title="parser.py (~550 lines)"}
-The largest module. Two-pass Markdown-to-HTML converter. Pass 1: fenced component blocks. Pass 2: standard Markdown. No external Markdown library.
+::card{icon="code" color="blue" title="parser.py (~650 lines)"}
+The largest module. Two-pass Markdown-to-HTML converter. Pass 1: fenced component blocks (with code fence tracking). Pass 2: standard Markdown. Includes XSS protection for URLs and `javascript:` URI rejection. No external Markdown library.
 ::
 
 ::card{icon="layout-grid" color="purple" title="renderer.py (98 lines)"}
@@ -87,14 +87,18 @@ The h2 heading gets an auto-generated slug ID via `slugify()`. The h3 headings a
 The regex for `:::` block detection:
 
 ```
-^:::(tip|info|warn|cards|decision-grid|command|accordion|pipeline|hero)\s*(\{[^}]*\})?\s*(.*)$
+^:::([a-z][a-z0-9-]*)\s*(\{[^}]*\})?\s*(.*)$
 ```
 
-- Group 1: block type (required)
+- Group 1: block type — supports hyphenated names like `decision-grid` (required)
 - Group 2: attribute string like `{title="..." usage="..."}` (optional)
 - Group 3: inline text after the type (used for callout titles like `:::tip My Title`)
 
-Nesting is tracked with a depth counter. Each `:::\w+` increments depth, each `:::` (bare) decrements. When depth hits 0, the block is closed.
+Nesting is tracked with a depth counter. Each `:::type` increments depth, each `:::` (bare) decrements. When depth hits 0, the block is closed.
+
+**Code fence awareness**: The fenced block scanner tracks code fence state. A `:::` delimiter inside a code fence (`` ``` ``) is ignored — it does not open or close a component block. This prevents content corruption when showing `:::` syntax examples inside code blocks.
+
+**Unclosed blocks**: If a `:::type` block never finds its closing `:::`, the parser emits a warning to stderr and treats the remaining content as the block body rather than silently consuming it.
 
 ### How Code Fences Work
 
@@ -125,20 +129,23 @@ Cards and commands use `::child{attrs}` syntax (double colon, no triple). These 
 ::flag\{([^}]*)\}\s*\n(.*?)(?=::flag|\Z)
 ```
 
-Each child's attribute string is parsed by `_parse_attrs()` which extracts `key="value"` pairs.
+Each child's attribute string is parsed by `_parse_attrs()` which extracts `key="value"` pairs. Attribute names support hyphens (e.g., `data-x="value"`) in addition to standard alphanumeric names.
 
 ### Inline Processing
 
 The `_inline(text)` function handles inline Markdown within any line:
 
-1. Images: `![alt](src)` -> `<img>`
-2. Links with classes: `[text](url){.class}` -> `<a class="hero-btn class">`
-3. Regular links: `[text](url)` -> `<a>`
-4. Inline code: `` `code` `` -> `<code>`
+1. **Code spans extracted first** — replaced with placeholders to protect from further processing
+2. Images: `![alt](src)` -> `<img>` (URL escaped, alt text escaped)
+3. Links with classes: `[text](url){.class}` -> `<a class="hero-btn class">`
+4. Regular links: `[text](url)` -> `<a>`
 5. Bold: `**text**` -> `<strong>`
 6. Italic: `*text*` -> `<em>`
+7. **Code spans restored** from placeholders
 
 Order matters — images are processed before links to prevent `![` being matched as a regular link.
+
+**URL security**: All URLs in links, images, and hero buttons are processed through `_escape_url()`, which HTML-escapes special characters (quotes, ampersands) and rejects `javascript:` URIs by replacing them with `#`.
 
 ### HTML Block Pass-Through
 
@@ -173,15 +180,17 @@ The `build(project_dir)` function:
 
 4. **Cleans output**: Deletes `_site/` entirely and recreates it. Every build is a clean build.
 
-5. **Copies assets**: Copies `style.css`, `script.js`, and `favicon.svg` from `theme/` to `_site/assets/`. If a custom favicon is specified in config, it's copied over the default.
+5. **Copies assets**: Copies `style.css`, `script.js`, and `favicon.svg` from `theme/` to `_site/assets/`. If a custom favicon is specified in config, it's copied only if the path resolves within the project directory (path traversal protection). Auto-generated favicons validate that theme colors match safe patterns (`#hex` or `rgba()`) before injecting them into SVG.
 
-6. **Parses pages**: For each `.md` file in the `pages` config array, reads the file from `pages/` directory, calls `parser.parse_markdown()`, and stores the result.
+6. **Validates and parses pages**: Checks that `pages/` directory exists. For each `.md` file in the `pages` config array, verifies the resolved path stays within `pages/` (path traversal protection), then reads the file and calls `parser.parse_markdown()`.
 
 7. **Generates search**: Calls `search.build_search_index()` with all parsed page data. Injects the JSON index into the search.js template and writes it to `_site/assets/search.js`.
 
 8. **Renders pages**: For each parsed page, calls `renderer.render_page()` which substitutes template variables and writes the HTML to `_site/`.
 
-### Config Defaults
+### Config Validation and Defaults
+
+The config loader validates types before merging with defaults. `pages` and `nav` must be lists (or null/absent for defaults). `site` and `theme` must be mappings. Invalid types produce a clear error message and exit.
 
 When `docs.yaml` is missing a field, these defaults apply:
 

@@ -133,7 +133,7 @@ pages:
 - Files not listed here are **not built** — this lets you keep drafts in `pages/` without publishing them
 
 :::warn Every page must be listed
-If a Markdown file exists in `pages/` but isn't listed in the `pages` array, it won't be included in the build. This is intentional — it gives you control over what gets published.
+If a Markdown file exists in `pages/` but isn't listed in the `pages` array, it won't be included in the build. This is intentional — it gives you control over what gets published. The `pages` field must be a YAML list — strings or other types produce a clear error message.
 :::
 
 ## Navigation
@@ -463,7 +463,7 @@ site:
   favicon: "my-favicon.svg"
 ```
 
-Place the favicon file in your project directory (next to `docs.yaml`). SVG format is recommended. Custom favicons are copied as-is and not themed.
+Place the favicon file in your project directory (next to `docs.yaml`). SVG format is recommended. Custom favicons are copied as-is and not themed. The path must resolve within your project directory — paths that escape via `../` are rejected for security.
 
 ### Layout Breakpoints
 

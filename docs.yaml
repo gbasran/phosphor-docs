@@ -121,6 +121,13 @@ nav:
         page: "internals.md"
         anchor: "extending-phosphor"
 
+  - group: "Project"
+    items:
+      - label: "Changelog"
+        icon: "scroll-text"
+        page: "changelog.md"
+        anchor: "changelog"
+
 pages:
   - index.md
   - getting-started.md
@@ -128,3 +135,4 @@ pages:
   - configuration.md
   - reference.md
   - internals.md
+  - changelog.md

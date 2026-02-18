@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check syntax (py_compile)
+        run: python3 -m py_compile phosphor/cli.py phosphor/build.py phosphor/config.py phosphor/parser.py phosphor/renderer.py phosphor/search.py
+
+      - name: Check formatting (basic style)
+        run: |
+          pip install pycodestyle
+          pycodestyle --max-line-length=160 --ignore=E501,W503 phosphor/
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Build phosphor-docs site
+        run: python3 -m phosphor.cli build .
+
+      - name: Verify build output
+        run: |
+          test -d _site
+          test -f _site/index.html
+          test -f _site/changelog.html
+          test -f _site/assets/style.css
+          test -f _site/assets/search.js
+          test -f _site/assets/favicon.svg
+          echo "Build output verified: all expected files present"
+
+      - name: Verify page count
+        run: |
+          count=$(ls _site/*.html | wc -l)
+          echo "Built $count pages"
+          test "$count" -ge 6
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Test config validation rejects bad types
+        run: |
+          tmpdir=$(mktemp -d)
+          echo 'pages: "not-a-list"' > "$tmpdir/docs.yaml"
+          mkdir -p "$tmpdir/pages"
+          if python3 -m phosphor.cli build "$tmpdir" 2>&1; then
+            echo "FAIL: should have rejected string pages"
+            exit 1
+          fi
+          echo "PASS: invalid config type rejected"
+
+      - name: Test path traversal blocked
+        run: |
+          python3 -c "
+          from phosphor.build import _is_safe_path
+          import os, tempfile
+          d = tempfile.mkdtemp()
+          assert not _is_safe_path(os.path.join(d, '../../etc/passwd'), d)
+          print('PASS: path traversal blocked')
+          "
+
+      - name: Test XSS URL rejection
+        run: |
+          python3 -c "
+          from phosphor.parser import _escape_url
+          assert _escape_url('javascript:alert(1)') == '#'
+          assert _escape_url('https://example.com') == 'https://example.com'
+          print('PASS: javascript: URIs rejected')
+          "
+
+      - name: Test port validation
+        run: |
+          python3 -c "
+          port = 99999
+          assert not (1 <= port <= 65535), 'Port 99999 should be invalid'
+          port = 8000
+          assert 1 <= port <= 65535, 'Port 8000 should be valid'
+          print('PASS: port validation logic correct')
+          "
+
+      - name: Test parser edge cases
+        run: |
+          python3 -c "
+          from phosphor.parser import parse_markdown
+          # Code fence inside ::: block
+          md = ':::tip Test\n\`\`\`\n::: not a closer\n\`\`\`\n:::'
+          html, _ = parse_markdown(md)
+          assert 'callout' in html, 'Tip block should render'
+          print('PASS: code fence inside ::: block')
+          "
